@@ -90,3 +90,25 @@ union FMOVBits // FMOV (incomplete)
     };
     uint32_t addr;
 };
+union BBits
+{
+    inline static uint32_t Create(uintptr_t from, uintptr_t to, bool isBL = false)
+    {
+        BBits val; val.addr = isBL ? 0x94000000 : 0x14000000;
+    
+        val.imm = (uint32_t)(to - from) >> 2;
+    
+        return val.addr;
+    }
+    inline uintptr_t GetAddrTo(uintptr_t from)
+    {
+        return from + (imm << 2);   
+    }
+    struct
+    {
+        int32_t  imm : 26;
+        uint32_t pad  : 5;
+        uint32_t isBL : 1;
+    };
+    uint32_t addr;
+};
