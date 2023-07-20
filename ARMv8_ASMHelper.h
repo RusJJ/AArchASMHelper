@@ -26,6 +26,29 @@ union CMPBits // CMP is an alias for SUBS
     };
     uint32_t addr;
 };
+
+union CMNBits // CMN is an alias for ADDS
+{
+    inline static uint32_t Create(uint32_t _imm, uint32_t _regn, bool isXreg)
+    {
+        // isXreg - is register X or W?
+        CMPBits val; val.addr = isXreg ? 0xB100001F : 0x3100001F;
+
+        val.regn = _regn;
+        val.imm = _imm;
+
+        return val.addr;
+    }
+    struct
+    {
+        uint32_t regd : 5; // register compare with (31 if CMN, otherwise it will became ADDS)
+        uint32_t regn : 5; // register compare what?
+        uint32_t imm : 12; // value is in range [0; 4095]
+        uint32_t pad : 10; // descriptor of instruction
+    };
+    uint32_t addr;
+};
+
 union MOVBits // A real MOV (not ORR or ADDS)
 {
     inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg)
@@ -41,11 +64,12 @@ union MOVBits // A real MOV (not ORR or ADDS)
     struct
     {
         uint32_t reg : 5;
-        uint32_t imm : 16;
+        int32_t  imm : 16;
         uint32_t pad : 11; // descriptor of instruction
     };
     uint32_t addr;
 };
+
 union FMOVBits // FMOV (incomplete)
 {
     inline static uint32_t Create(float _imm, uint32_t _reg, bool isDoublePrec)
@@ -90,6 +114,7 @@ union FMOVBits // FMOV (incomplete)
     };
     uint32_t addr;
 };
+
 union BBits
 {
     inline static uint32_t Create(uintptr_t from, uintptr_t to, bool isBL = false)
