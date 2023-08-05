@@ -5,6 +5,8 @@
 // This thing has been written by RusJJ a.k.a. [-=KILL MAN=-]
 // https://github.com/RusJJ
 
+namespace ARMv8 {
+
 union CMPBits // CMP is an alias for SUBS
 {
     inline static uint32_t Create(uint32_t _imm, uint32_t _regn, bool isXreg)
@@ -136,4 +138,29 @@ union BBits
         uint32_t isBL : 1;
     };
     uint32_t addr;
+};
+
+union ADRBits
+{
+    inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg)
+    {
+        // isXreg - is register X or W?
+        ADRBits val; val.addr = isXreg ? 0xD2800000 : 0x52800000;
+
+        val.reg = _reg;
+        val.immhi = _imm;
+
+        return val.addr;
+    }
+    struct
+    {
+        uint32_t reg :   5;
+        uint32_t immhi : 19;
+        uint32_t pad1 :  5;
+        uint32_t immlo : 2;
+        uint32_t isADRP :  1;
+    };
+    uint32_t addr;
+};
+
 };
