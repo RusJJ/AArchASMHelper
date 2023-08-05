@@ -5,7 +5,7 @@
 // This thing has been written by RusJJ a.k.a. [-=KILL MAN=-]
 // https://github.com/RusJJ
 
-namespace ARMv7 {
+namespace ARMV7 {
 
 union MOVBits
 {
