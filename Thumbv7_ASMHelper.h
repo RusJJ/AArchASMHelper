@@ -79,7 +79,7 @@ union CMPWBits // The logic is way more dumb (this one is NOT working right now!
             return ret;
         }
     };
-    inline static uint32_t Create(uint16_t _imm, uint32_t _reg)
+    inline static uint32_t Create(uint32_t _imm, uint32_t _reg)
     {
         CMPWBits val;           val.addr = 0x0000F240;
         //CMPWBits::Imm16 immval; immval.value = _imm;
@@ -137,7 +137,7 @@ union MOVWBits // Dumb logic as hell (imm value from 0 to 65535)
         };
         int16_t value;
     };
-    inline static uint32_t Create(int16_t _imm, uint32_t _reg)
+    inline static uint32_t Create(int32_t _imm, uint32_t _reg)
     {
         MOVWBits val;           val.addr = 0x0000F240;
         MOVWBits::Imm16 immval; immval.value = _imm;
