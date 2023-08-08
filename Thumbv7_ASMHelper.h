@@ -7,8 +7,8 @@
 
 namespace ThumbV7 {
 
-#define LSR(x,m) (x >> m)
-#define LSL(x,m) (x << m)
+#define LSR(x,m) ((x) >> (m))
+#define LSL(x,m) ((x) << (m))
 inline uint32_t ROR_C(uint32_t x, uint32_t n, uint32_t shift)
 {
     uint32_t m = shift % n;
