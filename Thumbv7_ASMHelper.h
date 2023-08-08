@@ -57,7 +57,6 @@ union CMPWBits // The logic is WAY-WAY-WAY MORE DUMB, LOL
         };
         uint32_t GetValue()
         {
-            char retc[4] {0};
             if(immval3)
             {
                 union {
@@ -68,27 +67,24 @@ union CMPWBits // The logic is WAY-WAY-WAY MORE DUMB, LOL
                 uint32_t unrotated_value = imm7_plus_1.value;
                 return ROR_C(unrotated_value, 32, imm5);
             }
-            else
+            char retc[4] {0};
+            switch(immval2)
             {
-                switch(immval2)
-                {
-                    case 0: return (uint32_t)imm8;
-                    case 1: retc[1] = immval1; retc[3] = immval1; return *(uint32_t*)retc;
-                    case 2: retc[0] = immval1; retc[2] = immval1; return *(uint32_t*)retc;
-                    case 3: retc[0] = immval1; retc[2] = immval1; retc[1] = immval1; retc[3] = immval1; return *(uint32_t*)retc;
-                }
+                default: return (uint32_t)imm8;
+                case 1: retc[1] = immval1; retc[3] = immval1; return *(uint32_t*)retc;
+                case 2: retc[0] = immval1; retc[2] = immval1; return *(uint32_t*)retc;
+                case 3: retc[0] = immval1; retc[1] = immval1; retc[2] = immval1; retc[3] = immval1; return *(uint32_t*)retc;
             }
-            return 0;
         }
-        void SetValue(uint32_t val)
+        bool SetValue(uint32_t val)
         {
-            
+            return false; // We are not ready! :(
         }
     };
     inline static uint32_t Create(uint32_t _imm, uint32_t _reg)
     {
         CMPWBits val;           val.addr = 0x0F00F1B0;
-        CMPWBits::Imm16 immval; immval.SetValue(_imm);
+        CMPWBits::Imm16 immval; if(!immval.SetValue(_imm)) return 0;
 
         val.reg = _reg;
         val.imm8 = immval.imm8;
