@@ -163,4 +163,42 @@ union ADRBits // Not ready
     uint32_t addr;
 };
 
+union MOVRegBits
+{
+    inline static uint32_t CreateMOV(uint32_t _from, uint32_t _to, bool isXreg)
+    {
+        // isXreg - is register X or W?
+        MOVRegBits val; val.addr = isXreg ? 0xAA0003E0 : 0x2A0003E0;
+
+        val.Rm = _from;
+        val.Rd = _to;
+        val.N = 0;
+
+        return val.addr;
+    }
+    inline static uint32_t CreateMVN(uint32_t _from, uint32_t _to, bool isXreg)
+    {
+        // isXreg - is register X or W?
+        MOVRegBits val; val.addr = isXreg ? 0xAA0003E0 : 0x2A0003E0;
+
+        val.Rm = _from;
+        val.Rd = _to;
+        val.N = 1;
+
+        return val.addr;
+    }
+    struct
+    {
+        uint32_t Rd : 5;
+        uint32_t Rn : 5;
+        uint32_t pad2 : 6;
+        uint32_t Rm : 5;
+        uint32_t N : 1;
+        uint32_t shift : 2;
+        uint32_t pad : 7;
+        uint32_t isXReg : 1;
+    };
+    uint32_t addr;
+};
+
 };
