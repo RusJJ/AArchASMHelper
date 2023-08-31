@@ -15,6 +15,24 @@ inline uint32_t ROR_C(uint32_t x, uint32_t n, uint32_t shift)
     return LSR(x, m) | LSL(x, n-m);
 }
 
+enum eCondition : unsigned char
+{
+    COND_EQUAL = 0,
+    COND_NOT_EQUAL,
+    COND_CARRY_SET,
+    COND_CARRY_CLEAR,
+    COND_MINUS_LESS,
+    COND_PLUS_GREAT_EQUAL,
+    COND_OVERFLOW_SET,
+    COND_OVERFLOW_CLEAR,
+    COND_HIGHER,
+    COND_LESS_EQUAL,
+    COND_GREAT_EQUAL,
+    COND_LESS,
+    COND_GREATER,
+    COND_LESS_EQUAL,
+};
+
 union CMP2Bits // imm size is sizeof(char) (from 0x00 to 0xFF)
 {
     inline static uint16_t Create(uint32_t _imm, uint32_t _reg)
@@ -172,6 +190,47 @@ union MOVWBits // Dumb logic as hell (imm value from 0 to 65535)
         uint32_t pad0 : 1;
     };
     uint32_t addr;
+};
+
+union B2CondBits
+{
+    inline static uint16_t Create(uintptr_t from, uintptr_t to, eCondition condition = 0)
+    {
+        B2CondBits val; val.addr = 0xD000;
+        val.cond = (uint32_t)condition;
+        val.imm = (uint16_t)((to - from - 4) >> 1);
+        return val.addr;
+    }
+    inline uintptr_t GetAddrTo(uintptr_t from)
+    {
+        return from + 4 + (imm << 1); // +4 = PC offset
+    }
+    struct
+    {
+        uint32_t imm  : 8;
+        uint32_t cond : 4;
+        uint32_t pad : 4;
+    };
+    uint16_t addr;
+};
+union B2Bits
+{
+    inline static uint16_t Create(uintptr_t from, uintptr_t to)
+    {
+        B2Bits val; val.addr = 0xE000;
+        val.imm = (uint16_t)((to - from - 4) >> 1);
+        return val.addr;
+    }
+    inline uintptr_t GetAddrTo(uintptr_t from)
+    {
+        return from + 4 + (imm << 1); // +4 = PC offset
+    }
+    struct
+    {
+        uint32_t imm  : 11;
+        uint32_t pad : 5;
+    };
+    uint16_t addr;
 };
 
 };
