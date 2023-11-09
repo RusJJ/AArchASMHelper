@@ -194,7 +194,7 @@ union MOVWBits // Dumb logic as hell (imm value from 0 to 65535)
 
 union B2CondBits
 {
-    inline static uint16_t Create(uintptr_t from, uintptr_t to, eCondition condition = 0)
+    inline static uint16_t Create(uintptr_t from, uintptr_t to, eCondition condition = eCondition::COND_EQUAL)
     {
         B2CondBits val; val.addr = 0xD000;
         val.cond = (uint32_t)condition;
