@@ -15,7 +15,7 @@ inline uint32_t ROR_C(uint32_t x, uint32_t n, uint32_t shift)
     return LSR(x, m) | LSL(x, n-m);
 }
 
-enum eCondition : unsigned char
+enum eCondition : unsigned char // not sure, lol
 {
     COND_EQUAL = 0,
     COND_NOT_EQUAL,
@@ -30,7 +30,7 @@ enum eCondition : unsigned char
     COND_GREAT_EQUAL,
     COND_LESS,
     COND_GREATER,
-    COND_LESS_EQUAL,
+    COND_LESS_EQUAL2,
 };
 
 union CMP2Bits // imm size is sizeof(char) (from 0x00 to 0xFF)
