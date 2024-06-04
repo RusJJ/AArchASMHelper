@@ -72,6 +72,27 @@ union MOVBits // A real MOV (not ORR or ADDS)
     uint32_t addr;
 };
 
+union MOVNBits // A real MOVN (not ORR or ADDS)
+{
+    inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg)
+    {
+        // isXreg - is register X or W?
+        MOVNBits val; val.addr = isXreg ? 0x92800000 : 0x12800000;
+
+        val.reg = _reg;
+        val.imm = _imm-1;
+
+        return val.addr;
+    }
+    struct
+    {
+        uint32_t reg : 5;
+        int32_t  imm : 16;
+        uint32_t pad : 11; // descriptor of instruction
+    };
+    uint32_t addr;
+};
+
 union FMOVBits // FMOV (incomplete)
 {
     inline static uint32_t Create(float _imm, uint32_t _reg, bool isDoublePrec)
