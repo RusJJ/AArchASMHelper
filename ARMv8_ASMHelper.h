@@ -8,6 +8,24 @@
 
 namespace ARMv8 {
 
+enum eCond : uint8_t
+{
+    COND_EQ, COND_NE, COND_CS, COND_CC,
+    COND_MI, COND_PL, COND_VS, COND_VC,
+    COND_HI, COND_LS, COND_GE, COND_LT,
+    COND_GT, COND_LE, COND_AL, COND_NV,
+};
+
+struct NOPBits
+{
+    inline static uint32_t Create() { return 0xD503201F; }
+};
+
+struct RETBits
+{
+    inline static uint32_t Create() { return 0xD65F03C0; }
+};
+
 struct CMPBits // CMP is an alias for SUBS
 {
     inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg)
@@ -73,6 +91,31 @@ struct BBits
     inline static bool IsBL(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
 };
 
+struct BRBits
+{
+    inline static uint32_t Create(uint32_t _reg, bool isBLR = false)
+    {
+        uint32_t basic = isBLR ? 0xD63F0000 : 0xD61F0000;
+        basic |= ((_reg & 0x1F) << 5);
+        return basic;
+    }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static bool IsBLR(uint32_t opcode) { return (opcode & 0x00200000) != 0; }
+};
+
+struct BCondBits
+{
+    inline static uint32_t Create(uintptr_t from, uintptr_t to, eCond cond)
+    {
+        uint32_t basic = 0x54000000 | ((cond - COND_EQ) & 0xF);
+        basic |= (((to - from) >> 2) & 0x7FFFF) << 5;
+        return basic;
+    }
+    inline static uint32_t GetImm(uint32_t opcode) { return (((opcode >> 5) & 0x7FFFF) << 2); }
+    inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
+    inline static eCond GetCond(uint32_t opcode) { return (eCond)(opcode & 0xF); }
+};
+
 struct ADRBits
 {
     inline static uint32_t Create(uintptr_t from, uintptr_t to, uint32_t _reg, bool isADRP)
@@ -119,6 +162,33 @@ struct LDRBits
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x40000000) != 0; }
 };
 
+struct LDRBBits
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _fromReg, uint32_t _fromOffset = 0)
+    {
+        uint32_t basic = 0x39400000;
+        basic |= (((_fromOffset) & 0xFFF) << 10) | (((_fromReg) & 0x1F) << 5) | ((_destReg) & 0x1F);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF); }
+};
+
+struct LDRHBits
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _fromReg, uint32_t _fromOffset = 0)
+    {
+        uint32_t basic = 0x79400000;
+        basic |= (((_fromOffset >> 1) & 0xFFF) << 10) | (((_fromReg) & 0x1F) << 5) | ((_destReg) & 0x1F);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF) << 1; }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x40000000) != 0; }
+};
+
 struct LDRSBits
 {
     inline static uint32_t Create(uint32_t _destReg, uint32_t _fromReg, uint32_t _fromOffset = 0)
@@ -157,6 +227,90 @@ struct STRSBits
     inline static uint8_t GetRt(uint32_t opcode) { return (opcode & 0x1F); }
     inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF) << 2; }
+};
+
+struct SUBBits
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _whatReg, uint32_t _imm, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0xD1000000 : 0x51000000;
+        basic |= ((_destReg) & 0x1F) | (((_whatReg) & 0x1F) << 5) | (((_imm) & 0xFFF) << 10);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct SUBRegBits
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _whatReg, uint32_t _withReg, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0xCB000000 : 0x4B000000;
+        basic |= ((_destReg) & 0x1F) | (((_whatReg) & 0x1F) << 5) | (((_withReg) & 0x1F) << 16);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint8_t GetRm(uint32_t opcode) { return ((opcode >> 16) & 0x1F); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct ADDBits
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _whatReg, uint32_t _imm, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0x91000000 : 0x11000000;
+        basic |= ((_destReg) & 0x1F) | (((_whatReg) & 0x1F) << 5) | (((_imm) & 0xFFF) << 10);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct ADDRegBits
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _whatReg, uint32_t _withReg, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0x8B000000 : 0x0B000000;
+        basic |= ((_destReg) & 0x1F) | (((_whatReg) & 0x1F) << 5) | (((_withReg) & 0x1F) << 16);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint8_t GetRm(uint32_t opcode) { return ((opcode >> 16) & 0x1F); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct CBZBits
+{
+    inline static uint32_t Create(uintptr_t from, uintptr_t to, uint32_t _reg, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0xB4000000 : 0x34000000;
+        basic |= ((((to - from) >> 2) & 0x7FFFF) << 5) | (_reg & 0x1F);
+        return basic;
+    }
+    inline static uint8_t GetRn(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 5) & 0x7FFFF) << 2; }
+    inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct CBNZBits
+{
+    inline static uint32_t Create(uintptr_t from, uintptr_t to, uint32_t _reg, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0xB5000000 : 0x35000000;
+        basic |= ((((to - from) >> 2) & 0x7FFFF) << 5) | (_reg & 0x1F);
+        return basic;
+    }
+    inline static uint8_t GetRn(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 5) & 0x7FFFF) << 2; }
+    inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
 };
 
 
