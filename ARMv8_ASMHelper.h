@@ -37,6 +37,7 @@ struct CMPBits // CMP is an alias for SUBS
     inline static uint16_t GetImm(uint32_t opcode) { return (opcode >> 10) & 0xFFF; }
     inline static uint8_t GetRd(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+    inline static uint32_t GetMaxImm() { return 0xFFF; }
 };
 
 struct CMNBits // CMN is an alias for ADDS
@@ -50,6 +51,7 @@ struct CMNBits // CMN is an alias for ADDS
     inline static uint16_t GetImm(uint32_t opcode) { return (opcode >> 10) & 0xFFF; }
     inline static uint8_t GetRd(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+    inline static uint32_t GetMaxImm() { return 0xFFF; }
 };
 
 struct MOVBits // A real MOV (not ORR or ADDS)
@@ -57,12 +59,13 @@ struct MOVBits // A real MOV (not ORR or ADDS)
     inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg)
     {
         uint32_t basic = isXreg ? 0xD2800000 : 0x52800000;
-        basic |= (_imm << 5) | (_reg & 0x1F);
+        basic |= ((_imm & 0xFFFF) << 5) | (_reg & 0x1F);
         return basic;
     }
     inline static uint16_t GetImm(uint32_t opcode) { return (opcode >> 5) & 0xFFFF; }
     inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+    inline static uint32_t GetMaxImm() { return 0xFFFF; }
 };
 
 struct MOVNBits // A real MOVN (not ORR or ADDS)
@@ -70,12 +73,13 @@ struct MOVNBits // A real MOVN (not ORR or ADDS)
     inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg)
     {
         uint32_t basic = isXreg ? 0x92800000 : 0x12800000;
-        basic |= ((_imm - 1) << 5) | (_reg & 0x1F);
+        basic |= (((_imm & 0xFFFF) - 1) << 5) | (_reg & 0x1F);
         return basic;
     }
     inline static uint16_t GetImm(uint32_t opcode) { return 1 + ((opcode >> 5) & 0xFFFF); }
     inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+    inline static uint32_t GetMaxImm() { return 0xFFFF; }
 };
 
 struct BBits
@@ -89,6 +93,8 @@ struct BBits
     inline static uint32_t GetImm(uint32_t opcode) { return ((opcode & 0x03FFFFFF) << 2); }
     inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
     inline static bool IsBL(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+    inline static uint32_t GetMaxImm() { return 0x03FFFFFF; }
+    inline static uint32_t GetMaxDist() { return 0x0FFFFFFC; }
 };
 
 struct BRBits
@@ -114,6 +120,8 @@ struct BCondBits
     inline static uint32_t GetImm(uint32_t opcode) { return (((opcode >> 5) & 0x7FFFF) << 2); }
     inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
     inline static eCond GetCond(uint32_t opcode) { return (eCond)(opcode & 0xF); }
+    inline static uint32_t GetMaxImm() { return 0x7FFFF; }
+    inline static uint32_t GetMaxDist() { return 0x001FFFFC; }
 };
 
 struct ADRBits
@@ -241,6 +249,7 @@ struct SUBBits
     inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+    inline static uint32_t GetMaxImm() { return 0xFFF; }
 };
 
 struct SUBRegBits
@@ -269,6 +278,7 @@ struct ADDBits
     inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+    inline static uint32_t GetMaxImm() { return 0xFFF; }
 };
 
 struct ADDRegBits
@@ -297,6 +307,8 @@ struct CBZBits
     inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 5) & 0x7FFFF) << 2; }
     inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+    inline static uint32_t GetMaxImm() { return 0x7FFFF; }
+    inline static uint32_t GetMaxDist() { return 0x001FFFFC; }
 };
 
 struct CBNZBits
@@ -311,6 +323,8 @@ struct CBNZBits
     inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 5) & 0x7FFFF) << 2; }
     inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+    inline static uint32_t GetMaxImm() { return 0x7FFFF; }
+    inline static uint32_t GetMaxDist() { return 0x001FFFFC; }
 };
 
 
