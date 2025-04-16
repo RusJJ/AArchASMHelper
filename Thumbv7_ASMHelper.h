@@ -259,6 +259,21 @@ struct CMPWBits
     inline static uint32_t GetMaxReg() { return 14; }
 };
 
+struct BWBits
+{
+    inline static uint32_t Create(uintptr_t from, uintptr_t to)
+    {
+        uint32_t basic = 0xB800F000;
+        uintptr_t offset = (uint16_t)((to - from - 4) >> 1);
+        basic |= (offset & 0x3FF) | (((offset >> 10) & 0x7FF) << 16);
+        return basic;
+    }
+    inline static uint32_t GetImm(uint32_t opcode) { return (opcode & 0x7FF); }
+    inline static uint32_t GetMaxImm() { return 0x1FFFFF; }
+    inline static uint32_t GetMaxDist() { return GetMaxImm() << 1 + 4; }
+    inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
+};
+
 };
 
 #endif // ARMV7THUMB_ASMHELPER_H
