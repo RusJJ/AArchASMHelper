@@ -28,30 +28,66 @@ struct RETBits
 
 struct CMPBits // CMP is an alias for SUBS
 {
-    inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg)
+    inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg, bool lslShift12 = false)
     {
         uint32_t basic = isXreg ? 0xF100001F : 0x7100001F;
-        basic |= ((_imm & 0xFFF) << 10) | ((_reg & 0x1F) << 5);
+        basic |= ((_imm & 0xFFF) << 10) | ((_reg & 0x1F) << 5) | (lslShift12 << 22);
         return basic;
     }
-    inline static uint16_t GetImm(uint32_t opcode) { return (opcode >> 10) & 0xFFF; }
+    inline static uint8_t GetShift(uint32_t opcode) { return ((opcode >> 22) & 0x1) * 12; }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF) << GetShift(opcode); }
     inline static uint8_t GetRd(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
     inline static uint32_t GetMaxImm() { return 0xFFF; }
 };
 
-struct CMNBits // CMN is an alias for ADDS
+struct CMPRegBits
 {
-    inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg)
+    inline static uint32_t Create(uint32_t _reg, uint32_t _regWith, bool isXreg, uint8_t lslRegShift = 0)
     {
-        uint32_t basic = isXreg ? 0xB100001F : 0x3100001F;
-        basic |= ((_imm & 0xFFF) << 10) | ((_reg & 0x1F) << 5);
+        uint32_t basic = isXreg ? 0xEB00001F : 0x6B00001F;
+        uint8_t option = lslRegShift / 8;
+        lslRegShift %= 8;
+        basic |= ((_regWith & 0x1F) << 16) | ((_reg & 0x1F) << 5) | ((lslRegShift & 0x7) << 10) | ((option & 0x7) << 13);
         return basic;
     }
-    inline static uint16_t GetImm(uint32_t opcode) { return (opcode >> 10) & 0xFFF; }
+    inline static uint8_t GetOption(uint32_t opcode) { return (opcode >> 13) & 0x7; }
+    inline static uint8_t GetShift(uint32_t opcode) { return ((opcode >> 10) & 0x7) + 8 * GetOption(opcode); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint8_t GetRm(uint32_t opcode) { return ((opcode >> 16) & 0x1F); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct CMNBits // CMN is an alias for ADDS
+{
+    inline static uint32_t Create(uint32_t _imm, uint32_t _reg, bool isXreg, bool lslShift12 = false)
+    {
+        uint32_t basic = isXreg ? 0xB100001F : 0x3100001F;
+        basic |= ((_imm & 0xFFF) << 10) | ((_reg & 0x1F) << 5) | (lslShift12 << 22);
+        return basic;
+    }
+    inline static uint8_t GetShift(uint32_t opcode) { return ((opcode >> 22) & 0x1) * 12; }
+    inline static uint16_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF) << GetShift(opcode); }
     inline static uint8_t GetRd(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
     inline static uint32_t GetMaxImm() { return 0xFFF; }
+};
+
+struct CMNRegBits
+{
+    inline static uint32_t Create(uint32_t _reg, uint32_t _regWith, bool isXreg, uint8_t lslRegShift = 0)
+    {
+        uint32_t basic = isXreg ? 0xAB00001F : 0x2B00001F;
+        uint8_t option = lslRegShift / 8;
+        lslRegShift %= 8;
+        basic |= ((_regWith & 0x1F) << 16) | ((_reg & 0x1F) << 5) | ((lslRegShift & 0x7) << 10) | ((option & 0x7) << 13);
+        return basic;
+    }
+    inline static uint8_t GetOption(uint32_t opcode) { return (opcode >> 13) & 0x7; }
+    inline static uint8_t GetShift(uint32_t opcode) { return ((opcode >> 10) & 0x7) + 8 * GetOption(opcode); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint8_t GetRm(uint32_t opcode) { return ((opcode >> 16) & 0x1F); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
 };
 
 struct MOVBits // A real MOV (not ORR or ADDS)
@@ -136,7 +172,7 @@ struct ADRBits
     inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
     inline static uint32_t GetImm(uint32_t opcode)
     {
-        return ((((opcode >> 5) & 0x7FFFF) << 2) | ((opcode >> 29) & 0x3)) << 12;
+        return ((((opcode >> 5) & 0x7FFFF) << 2) | (((opcode >> 29) & 0x3)) << 12);
     }
     inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos & 0xFFFFF000; }
     inline static bool IsADRP(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
@@ -147,7 +183,7 @@ struct MOVRegBits
     inline static uint32_t Create(uint32_t _destReg, uint32_t _fromReg, bool isXreg, bool isMVN = false)
     {
         uint32_t basic = isXreg ? 0xAA0003E0 : 0x2A0003E0;
-        basic |= (_destReg & 0x1F) | (_fromReg & 0x1F) << 16 | (isMVN & 0x1) << 21;
+        basic |= (_destReg & 0x1F) | ((_fromReg & 0x1F) << 16) | (isMVN << 21);
         return basic;
     }
     inline static bool IsMVN(uint32_t opcode) { return ((opcode >> 21) & 0x1); }
