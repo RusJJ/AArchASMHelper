@@ -103,8 +103,8 @@ struct BBits
     }
     inline static uint32_t GetImm(uint16_t opcode) { return (opcode & 0x7FF); }
     inline static uint32_t GetMaxImm() { return 0x7FF; }
-    inline static uint32_t GetMaxDist() { return GetMaxImm() << 1 + 4; }
-    inline static uintptr_t GetDest(uint16_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
+    inline static uint32_t GetMaxDist() { return (GetMaxImm() << 1) + 4; }
+    inline static uintptr_t GetDest(uint16_t opcode, uintptr_t pos) { return (GetImm(opcode) << 1) + 4 + pos; }
 };
 
 struct BXBits
@@ -131,8 +131,8 @@ struct BCondBits
     }
     inline static uint32_t GetImm(uint16_t opcode) { return (opcode & 0xFF); }
     inline static uint32_t GetMaxImm() { return 0xFF; }
-    inline static uint32_t GetMaxDist() { return GetMaxImm() << 1 + 4; }
-    inline static uintptr_t GetDest(uint16_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
+    inline static uint32_t GetMaxDist() { return (GetMaxImm() << 1) + 4; }
+    inline static uintptr_t GetDest(uint16_t opcode, uintptr_t pos) { return (GetImm(opcode) << 1) + 4 + pos; }
     inline static eCond GetCond(uint16_t opcode) { return (eCond)((opcode >> 8) & 0xF); }
 };
 
@@ -325,8 +325,8 @@ struct BWBits
     }
     inline static uint32_t GetImm(uint32_t opcode) { return (opcode & 0x7FF); }
     inline static uint32_t GetMaxImm() { return 0x1FFFFF; }
-    inline static uint32_t GetMaxDist() { return GetMaxImm() << 1 + 4; }
-    inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
+    inline static uint32_t GetMaxDist() { return (GetMaxImm() << 1) + 4; }
+    inline static uintptr_t GetDest(uint32_t opcode, uintptr_t pos) { return (GetImm(opcode) << 1) + 4 + pos; }
 };
 
 };
