@@ -78,6 +78,19 @@ struct MOVBits
     inline static uint32_t GetMaxImm() { return 0xFF; }
     inline static uint32_t GetMaxReg() { return 7; }
 };
+struct MOVRegBits
+{
+    inline static uint16_t Create(uint32_t _reg, uint32_t _regWith)
+    {
+        uint16_t basic = (_reg & 0x8) ? 0x4680 : 0x4600;
+        _reg %= 8;
+        basic |= ((_regWith & 0xF) << 3) | (_reg & 0x7);
+        return basic;
+    }
+    inline static uint8_t GetRn(uint16_t opcode) { return (opcode & 0x7) + 8 * ((opcode & 0x4680)==0x4680); }
+    inline static uint8_t GetRm(uint16_t opcode) { return ((opcode >> 3) & 0xF); }
+    inline static uint32_t GetMaxReg() { return 0xF; }
+};
 
 struct BBits
 {
@@ -121,6 +134,48 @@ struct BCondBits
     inline static uint32_t GetMaxDist() { return GetMaxImm() << 1 + 4; }
     inline static uintptr_t GetDest(uint16_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
     inline static eCond GetCond(uint16_t opcode) { return (eCond)((opcode >> 8) & 0xF); }
+};
+
+struct LDRPCBits // LDR Rd, [PC, #offset], offset is divided by 4 (0, 4, 8, 12 &etc)
+{
+    inline static uint16_t Create(uint32_t _destReg, uint32_t _fromOffset = 0)
+    {
+        uint32_t basic = 0x4800;
+        basic |= ((_fromOffset >> 2) & 0xFF) | (((_destReg) & 0x7) << 8);
+        return basic;
+    }
+    inline static uint32_t GetMaxImm() { return 0xFF; }
+    inline static uint32_t GetMaxDist() { return GetMaxImm() << 2; }
+    inline static uint32_t GetImm(uint16_t opcode) { return (opcode & 0xFF) << 2; }
+    inline static uint8_t GetRd(uint16_t opcode) { return (opcode & 0x7); }
+    // "pos" is an address of such instruction AFTER LDR: ADD Rd, PC
+    inline static uintptr_t GetDest(uint16_t opcode, uintptr_t pos) { return (GetImm(opcode) + pos) & 0xFFFFFFFC; }
+};
+
+struct SUBSPBits // SUB SP, SP, #offset  , offset is divided by 4 (0, 4, 8, 12 &etc)
+{
+    inline static uint16_t Create(uint32_t offset)
+    {
+        uint16_t basic = 0xB080;
+        basic |= ((offset >> 2) & 0x7F);
+        return basic;
+    }
+    inline static uint32_t GetImm(uint16_t opcode) { return (opcode & 0x7F) << 2; }
+    inline static uint32_t GetMaxImm() { return 0x7F; }
+    inline static uint32_t GetMaxOffset() { return GetMaxImm() << 2; }
+};
+
+struct ADDSPBits // ADD SP, SP, #offset  , offset is divided by 4 (0, 4, 8, 12 &etc)
+{
+    inline static uint16_t Create(uint32_t offset)
+    {
+        uint16_t basic = 0xB000;
+        basic |= ((offset >> 2) & 0x7F);
+        return basic;
+    }
+    inline static uint32_t GetImm(uint16_t opcode) { return (opcode & 0x7F) << 2; }
+    inline static uint32_t GetMaxImm() { return 0x7F; }
+    inline static uint32_t GetMaxOffset() { return GetMaxImm() << 2; }
 };
 
 // OLD TO BE REIMPLEMENTED BELOW !!!
