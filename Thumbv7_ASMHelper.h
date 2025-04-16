@@ -62,7 +62,7 @@ struct CMPRegBits
     }
     inline static uint8_t GetRn(uint16_t opcode) { return (opcode & 0x7) + 8 * ((opcode & 0x4580)==0x4580); }
     inline static uint8_t GetRm(uint16_t opcode) { return ((opcode >> 3) & 0xF); }
-    inline static uint32_t GetMaxReg() { return 14; }
+    inline static uint32_t GetMaxReg() { return 0xF; }
 };
 
 struct MOVBits
@@ -77,6 +77,50 @@ struct MOVBits
     inline static uint8_t GetRd(uint16_t opcode) { return ((opcode >> 8) & 0x7); }
     inline static uint32_t GetMaxImm() { return 0xFF; }
     inline static uint32_t GetMaxReg() { return 7; }
+};
+
+struct BBits
+{
+    inline static uint16_t Create(uintptr_t from, uintptr_t to)
+    {
+        uint16_t basic = 0xE000;
+        uintptr_t offset = (uint16_t)((to - from - 4) >> 1);
+        basic |= (offset & 0x7FF);
+        return basic;
+    }
+    inline static uint32_t GetImm(uint16_t opcode) { return (opcode & 0x7FF); }
+    inline static uint32_t GetMaxImm() { return 0x7FF; }
+    inline static uint32_t GetMaxDist() { return GetMaxImm() << 1 + 4; }
+    inline static uintptr_t GetDest(uint16_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
+};
+
+struct BXBits
+{
+    inline static uint16_t Create(uint32_t _reg, bool isBLX = false)
+    {
+        uint16_t basic = isBLX ? 0x4780 : 0x4700;
+        basic |= (_reg << 3);
+        return basic;
+    }
+    inline static uint8_t GetRn(uint16_t opcode) { return ((opcode >> 3) & 0xF); }
+    inline static bool IsBLX(uint16_t opcode) { return (opcode & 0x0080) != 0; }
+    inline static uint32_t GetMaxReg() { return 0xF; }
+};
+
+struct BCondBits
+{
+    inline static uint16_t Create(uintptr_t from, uintptr_t to, eCond cond)
+    {
+        uint16_t basic = 0xD000;
+        uintptr_t offset = (uint16_t)((to - from - 4) >> 1);
+        basic |= (offset & 0xFF) | (((cond - COND_EQ) & 0xF) << 8);
+        return basic;
+    }
+    inline static uint32_t GetImm(uint16_t opcode) { return (opcode & 0xFF); }
+    inline static uint32_t GetMaxImm() { return 0xFF; }
+    inline static uint32_t GetMaxDist() { return GetMaxImm() << 1 + 4; }
+    inline static uintptr_t GetDest(uint16_t opcode, uintptr_t pos) { return GetImm(opcode) + pos; }
+    inline static eCond GetCond(uint16_t opcode) { return (eCond)((opcode >> 8) & 0xF); }
 };
 
 // OLD TO BE REIMPLEMENTED BELOW !!!
@@ -119,47 +163,6 @@ union MOVWBits // Dumb logic as hell (imm value from 0 to 65535)
         uint32_t pad0 : 1;
     };
     uint32_t addr;
-};
-
-union B2CondBits
-{
-    inline static uint16_t Create(uintptr_t from, uintptr_t to, eCond condition = eCond::COND_EQ)
-    {
-        B2CondBits val; val.addr = 0xD000;
-        val.cond = (uint32_t)condition;
-        val.imm = (uint16_t)((to - from - 4) >> 1);
-        return val.addr;
-    }
-    inline uintptr_t GetAddrTo(uintptr_t from)
-    {
-        return from + 4 + (imm << 1); // +4 = PC offset
-    }
-    struct
-    {
-        uint32_t imm  : 8;
-        uint32_t cond : 4;
-        uint32_t pad : 4;
-    };
-    uint16_t addr;
-};
-union B2Bits
-{
-    inline static uint16_t Create(uintptr_t from, uintptr_t to)
-    {
-        B2Bits val; val.addr = 0xE000;
-        val.imm = (uint16_t)((to - from - 4) >> 1);
-        return val.addr;
-    }
-    inline uintptr_t GetAddrTo(uintptr_t from)
-    {
-        return from + 4 + (imm << 1); // +4 = PC offset
-    }
-    struct
-    {
-        uint32_t imm  : 11;
-        uint32_t pad : 5;
-    };
-    uint16_t addr;
 };
 
 
