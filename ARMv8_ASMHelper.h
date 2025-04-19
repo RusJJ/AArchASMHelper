@@ -302,6 +302,13 @@ struct SUBRegBits
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
 };
 
+struct SUBSPBits
+{
+    inline static uint32_t Create(uint32_t _imm) { return SUBBits::Create(31, 31, _imm, true); }
+    inline static uint32_t GetImm(uint32_t opcode) { return SUBBits::GetImm(opcode); }
+    inline static uint32_t GetMaxImm() { return SUBBits::GetMaxImm(); }
+};
+
 struct ADDBits
 {
     inline static uint32_t Create(uint32_t _destReg, uint32_t _whatReg, uint32_t _imm, bool isXreg)
@@ -329,6 +336,13 @@ struct ADDRegBits
     inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static uint8_t GetRm(uint32_t opcode) { return ((opcode >> 16) & 0x1F); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct ADDSPBits
+{
+    inline static uint32_t Create(uint32_t _imm) { return ADDBits::Create(31, 31, _imm, true); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ADDBits::GetImm(opcode); }
+    inline static uint32_t GetMaxImm() { return ADDBits::GetMaxImm(); }
 };
 
 struct CBZBits
