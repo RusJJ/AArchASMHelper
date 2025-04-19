@@ -230,7 +230,6 @@ struct LDRHBits
     inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
     inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF) << 1; }
-    inline static bool IsX(uint32_t opcode) { return (opcode & 0x40000000) != 0; }
 };
 
 struct LDRSBits
@@ -246,6 +245,44 @@ struct LDRSBits
     inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF) << 2; }
 };
 
+struct LDRDBits
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _fromReg, uint32_t _fromOffset = 0)
+    {
+        uint32_t basic = 0x5C000000;
+        basic |= (((_fromOffset >> 2) & 0xFFF) << 10) | (((_fromReg) & 0x1F) << 5) | ((_destReg) & 0x1F);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF) << 2; }
+};
+
+struct LDRLiteralBits
+{
+    inline static uint32_t Create(uint32_t _destReg, bool isXreg, uint32_t _fromOffset = 0)
+    {
+        uint32_t basic = isXreg ? 0x58000000 : 0x18000000;
+        basic |= (((_fromOffset >> 2) & 0x7FFFF) << 5) | ((_destReg) & 0x1F);
+        return basic;
+    }
+    inline static uint8_t GetRt(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 5) & 0x7FFFF); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x40000000) != 0; }
+};
+
+struct LDRSLiteralBits
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _fromOffset = 0)
+    {
+        uint32_t basic = 0x1C000000;
+        basic |= (((_fromOffset >> 2) & 0x7FFFF) << 5) | ((_destReg) & 0x1F);
+        return basic;
+    }
+    inline static uint8_t GetRt(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 5) & 0x7FFFF); }
+};
+
 struct STRBits
 {
     inline static uint32_t Create(uint32_t _saveReg, uint32_t _toReg, bool isXreg, uint32_t _toOffset = 0)
@@ -258,6 +295,32 @@ struct STRBits
     inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
     inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF) << (2 + IsX(opcode)); }
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x40000000) != 0; }
+};
+
+struct STRBBits
+{
+    inline static uint32_t Create(uint32_t _saveReg, uint32_t _toReg, uint32_t _toOffset = 0)
+    {
+        uint32_t basic = 0x39000000;
+        basic |= ((_toOffset & 0xFFF) << 10) | (((_toReg) & 0x1F) << 5) | ((_saveReg) & 0x1F);
+        return basic;
+    }
+    inline static uint8_t GetRt(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return (opcode >> 10) & 0xFFF; }
+};
+
+struct STRHBits
+{
+    inline static uint32_t Create(uint32_t _saveReg, uint32_t _toReg, uint32_t _toOffset = 0)
+    {
+        uint32_t basic = 0x79000000;
+        basic |= (((_toOffset >> 1) & 0xFFF) << 10) | (((_toReg) & 0x1F) << 5) | ((_saveReg) & 0x1F);
+        return basic;
+    }
+    inline static uint8_t GetRt(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint32_t GetImm(uint32_t opcode) { return ((opcode >> 10) & 0xFFF) << 1; }
 };
 
 struct STRSBits
@@ -375,6 +438,60 @@ struct CBNZBits
     inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
     inline static uint32_t GetMaxImm() { return 0x7FFFF; }
     inline static uint32_t GetMaxDist() { return 0x001FFFFC; }
+};
+
+struct RBITBits // Reverse BITS
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _fromReg, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0xDAC00000 : 0x5AC00000;
+        basic |= (_destReg & 0x1F) | ((_fromReg & 0x1F) << 5);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct REVBits // Reverse BYTES
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _fromReg, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0xDAC00C00 : 0x5AC00800;
+        basic |= (_destReg & 0x1F) | ((_fromReg & 0x1F) << 5);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct MULBits // DestReg = WhatReg * WithReg
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _whatReg, uint32_t _withReg, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0x9B007C00 : 0x1B007C00;
+        basic |= ((_destReg) & 0x1F) | (((_whatReg) & 0x1F) << 5) | (((_withReg) & 0x1F) << 16);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint8_t GetRm(uint32_t opcode) { return ((opcode >> 16) & 0x1F); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
+};
+
+struct MNEGBits // DestReg = -(WhatReg * WithReg)
+{
+    inline static uint32_t Create(uint32_t _destReg, uint32_t _whatReg, uint32_t _withReg, bool isXreg)
+    {
+        uint32_t basic = isXreg ? 0x9B00FC00 : 0x1B00FC00;
+        basic |= ((_destReg) & 0x1F) | (((_whatReg) & 0x1F) << 5) | (((_withReg) & 0x1F) << 16);
+        return basic;
+    }
+    inline static uint8_t GetRd(uint32_t opcode) { return (opcode & 0x1F); }
+    inline static uint8_t GetRn(uint32_t opcode) { return ((opcode >> 5) & 0x1F); }
+    inline static uint8_t GetRm(uint32_t opcode) { return ((opcode >> 16) & 0x1F); }
+    inline static bool IsX(uint32_t opcode) { return (opcode & 0x80000000) != 0; }
 };
 
 
